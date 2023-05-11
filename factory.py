@@ -16,11 +16,9 @@ def create_app():
     db.init_app(app)
 
     from models import User
-
     migrate.init_app(app, db)
 
-    @app.route('/')
-    def hello_world():
-        return "<h1>Hello World</h1>"
+    from controllers import user_controller
+    app.register_blueprint(user_controller)
     
     return app
