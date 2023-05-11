@@ -38,3 +38,24 @@ def get_users():
             for user in users
         ]
     ), 200
+
+@user_controller.post("/")
+def create_user():
+    data = request.json
+
+    if User.query.filter_by(username=data["username"]).first():
+        return {"msg": "username not available"}, 409
+    
+    if User.query.filter_by(email=data["email"]).first():
+        return {"msg": "email not available"}, 409
+    
+    user = User(
+        username=data["username"], 
+        email=data["email"],
+        birthdate=datetime.fromisoformat(data["birthdate"]) if "birthdate" in data else None,
+    )
+
+    db.session.add(user)
+    db.session.commit()
+
+    return {"msg": "User created successfully"}, 201
