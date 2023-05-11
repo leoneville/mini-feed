@@ -77,3 +77,15 @@ def put_user(user_id):
     db.session.commit()
 
     return {"msg": "User was updated"}, 200
+
+@user_controller.delete("/<int:user_id>")
+def delete_user(user_id):
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return {"msg": f"There is no user with id {user_id}"}, 404
+    
+    db.session.delete(user)
+    db.session.commit()
+
+    return {"msg": "User deleted from the database."}, 200
