@@ -26,6 +26,9 @@ def get_user(user_id):
 def get_users():
     users = User.query.all()
 
+    if len(users) == 0:
+        return {"msg": "no registered user"}, 404
+
     return jsonify(
         [
             {
@@ -43,49 +46,68 @@ def get_users():
 def create_user():
     data = request.json
 
-    if User.query.filter_by(username=data["username"]).first():
-        return {"msg": "username not available"}, 409
-    
-    if User.query.filter_by(email=data["email"]).first():
-        return {"msg": "email not available"}, 409
-    
-    user = User(
-        username=data["username"], 
-        email=data["email"],
-        birthdate=datetime.fromisoformat(data["birthdate"]) if "birthdate" in data else None,
-    )
+    try:
+        if User.query.filter_by(username=data["username"]).first():
+            return {"msg": "username not available"}, 409
+        
+        if User.query.filter_by(email=data["email"]).first():
+            return {"msg": "email not available"}, 409
+        
+        user = User(
+            username=data["username"], 
+            email=data["email"],
+            birthdate=datetime.fromisoformat(data["birthdate"]) if "birthdate" in data else None,
+        )
+        db.session.add(user)
+        db.session.commit()
 
-    db.session.add(user)
-    db.session.commit()
+        return {"msg": "User created successfully"}, 201
+    except KeyError:
+        return {"msg": "username and email fields are required"}, 400
+    except:
+        db.session.rollback()
+        return {"msg": "Ops! Something went wrong."}, 500
 
-    return {"msg": "User created successfully"}, 201
+
 
 @user_controller.put("/<int:user_id>")
 def put_user(user_id):
-    user = db.session.get(User, user_id)
+    try:
+        user = db.session.get(User, user_id)
 
-    if user is None:
-        return {"msg": f"There is no user with id {user_id}"}, 404
+        if user is None:
+            return {"msg": f"There is no user with id {user_id}"}, 404
 
-    data = request.json
+        data = request.json
 
-    user.username = data["username"]
-    user.email = data["email"]
-    if "birthdate" in data:
-        user.birthdate = datetime.fromisoformat(data["birthdate"])
+        user.username = data["username"]
+        user.email = data["email"]
+        if "birthdate" in data:
+            user.birthdate = datetime.fromisoformat(data["birthdate"])
 
-    db.session.commit()
+        db.session.commit()
 
-    return {"msg": "User was updated"}, 200
+        return {"msg": "User was updated"}, 200
+    except KeyError:
+        return {"msg": "username and email fields are required"}, 400
+    except:
+        db.session.rollback()
+        return {"msg": "Ops! Something went wrong."}, 500
+
 
 @user_controller.delete("/<int:user_id>")
 def delete_user(user_id):
-    user = db.session.get(User, user_id)
+    try:
+        user = db.session.get(User, user_id)
 
-    if user is None:
-        return {"msg": f"There is no user with id {user_id}"}, 404
-    
-    db.session.delete(user)
-    db.session.commit()
+        if user is None:
+            return {"msg": f"There is no user with id {user_id}"}, 404
+        
+        db.session.delete(user)
+        db.session.commit()
 
-    return {"msg": "User deleted from the database."}, 200
+        return {"msg": "User deleted from the database."}, 200
+    except Exception as error:
+        print(type(error))
+        db.session.rollback()
+        return {"msg": "Ops! Something went wrong."}, 500
