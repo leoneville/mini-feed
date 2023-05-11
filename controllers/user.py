@@ -59,3 +59,21 @@ def create_user():
     db.session.commit()
 
     return {"msg": "User created successfully"}, 201
+
+@user_controller.put("/<int:user_id>")
+def put_user(user_id):
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return {"msg": f"There is no user with id {user_id}"}, 404
+
+    data = request.json
+
+    user.username = data["username"]
+    user.email = data["email"]
+    if "birthdate" in data:
+        user.birthdate = datetime.fromisoformat(data["birthdate"])
+
+    db.session.commit()
+
+    return {"msg": "User was updated"}, 200
