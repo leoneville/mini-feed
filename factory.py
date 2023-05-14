@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from spectree import SpecTree
 
 from config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
+api = SpecTree("flask", title="Mini Feed API", version="v.1.0", path="docs")
 
 def create_app():
 
@@ -20,5 +22,7 @@ def create_app():
 
     from controllers import user_controller
     app.register_blueprint(user_controller)
+
+    api.register(app)
     
     return app
