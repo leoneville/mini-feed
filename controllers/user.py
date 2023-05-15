@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify
 from flask.globals import request
 from spectree import Response
 
-from models import User
+from models import User, UserCreate
 
 user_controller = Blueprint("user_controller", __name__, url_prefix="/users")
 
@@ -62,7 +62,7 @@ def get_users():
         return {"msg": "Ops! Something went wrong."}, 500
 
 @user_controller.post("/")
-@api.validate(resp=Response(HTTP_201=None, HTTP_400=None, HTTP_409=None, HTTP_500=None), tags=["users"])
+@api.validate(json=UserCreate, resp=Response(HTTP_201=None, HTTP_400=None, HTTP_409=None, HTTP_500=None), tags=["users"])
 def create_user():
     """
     Create an user
@@ -75,6 +75,10 @@ def create_user():
         
         if User.query.filter_by(email=data["email"]).first():
             return {"msg": "email not available"}, 409
+        
+        if "birthdate" in data:
+            if data["birthdate"].endswith("Z"):
+                data["birthdate"] = data["birthdate"][:-1]
         
         user = User(
             username=data["username"], 
@@ -95,7 +99,7 @@ def create_user():
 
 
 @user_controller.put("/<int:user_id>")
-@api.validate(resp=Response(HTTP_200=None, HTTP_400=None, HTTP_404=None, HTTP_500=None), tags=["users"])
+@api.validate(json=UserCreate, resp=Response(HTTP_200=None, HTTP_400=None, HTTP_404=None, HTTP_500=None), tags=["users"])
 def put_user(user_id):
     """
     Update an user
@@ -107,6 +111,10 @@ def put_user(user_id):
             return {"msg": f"There is no user with id {user_id}"}, 404
 
         data = request.json
+
+        if "birthdate" in data:
+            if data["birthdate"].endswith("Z"):
+                data["birthdate"] = data["birthdate"][:-1]
 
         user.username = data["username"]
         user.email = data["email"]
