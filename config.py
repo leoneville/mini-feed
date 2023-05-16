@@ -16,6 +16,9 @@ class Config:
 
     APP_TITLE = "Flask REST API"
 
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+    JWT_TOKEN_LOCATION = ["headers"]
+
     @staticmethod
     def init_app(app):
         pass

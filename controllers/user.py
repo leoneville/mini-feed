@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify
 from flask.globals import request
 from spectree import Response
 
-from models import User, UserCreate
+from models import User, UserCreate, UserEdit
 from models.user import UserResponseList, UserResponse
 from utils.responses import DefaultResponse
 
@@ -31,7 +31,7 @@ def get_user(user_id):
         
         return json.loads(response), 200
     except Exception as error:
-        print(f"<get_user: {type(error)}>")
+        print(f"<get_user: {type(error)}> - {error}")
         return {"msg": "Ops! Something went wrong."}, 500
 
 
@@ -56,7 +56,7 @@ def get_users():
 
         return jsonify(json.loads(response)), 200
     except Exception as error:
-        print(f"<get_users: {type(error)}>")
+        print(f"<get_users: {type(error)}> - {error}>")
         return {"msg": "Ops! Something went wrong."}, 500
 
 @user_controller.post("/")
@@ -86,6 +86,7 @@ def create_user():
             username=data["username"], 
             email=data["email"],
             birthdate=datetime.fromisoformat(data["birthdate"]) if "birthdate" in data else None,
+            password=data["password"],
         )
         db.session.add(user)
         db.session.commit()
@@ -95,13 +96,13 @@ def create_user():
         return {"msg": "username and email fields are required"}, 400
     except Exception as error:
         db.session.rollback()
-        print(f"<create_user: {type(error)}>")
+        print(f"<create_user: {type(error)}> - {error}>")
         return {"msg": "Ops! Something went wrong."}, 500
 
 
 
 @user_controller.put("/<int:user_id>")
-@api.validate(json=UserCreate, resp=Response(
+@api.validate(json=UserEdit, resp=Response(
     HTTP_200=DefaultResponse, 
     HTTP_400=DefaultResponse, 
     HTTP_404=DefaultResponse, 
@@ -134,7 +135,7 @@ def put_user(user_id):
         return {"msg": "username and email fields are required"}, 400
     except Exception as error:
         db.session.rollback()
-        print(f"<put_user: {type(error)}>")
+        print(f"<put_user: {type(error)}> - {error}>")
         return {"msg": "Ops! Something went wrong."}, 500
 
 
@@ -159,5 +160,5 @@ def delete_user(user_id):
         return {"msg": "User deleted from the database."}, 200
     except Exception as error:
         db.session.rollback()
-        print(f"<delete_user: {type(error)}>")
+        print(f"<delete_user: {type(error)}> - {error}>")
         return {"msg": "Ops! Something went wrong."}, 500
