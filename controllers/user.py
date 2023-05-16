@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from factory import api, db
 from flask import Blueprint, jsonify
@@ -6,11 +7,16 @@ from flask.globals import request
 from spectree import Response
 
 from models import User, UserCreate
+from models.user import UserResponseList, UserResponse
+from utils.responses import DefaultResponse
 
 user_controller = Blueprint("user_controller", __name__, url_prefix="/users")
 
 @user_controller.get("/<int:user_id>")
-@api.validate(resp=Response(HTTP_200=None, HTTP_404=None, HTTP_500=None), tags=["users"])
+@api.validate(resp=Response(
+    HTTP_200=UserResponse, 
+    HTTP_404=DefaultResponse, 
+    HTTP_500=DefaultResponse), tags=["users"])
 def get_user(user_id):
     """
     Get a specified user
@@ -21,20 +27,19 @@ def get_user(user_id):
         if user is None:
             return {"msg": f"There is no user with id {user_id}"}, 404
         
-        return {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "birthdate": user.birthdate.isoformat() if user.birthdate else None,
-            "created_at": user.created_at.isoformat(),
-        }, 200
+        response = UserResponse.from_orm(user).json()
+        
+        return json.loads(response), 200
     except Exception as error:
         print(f"<get_user: {type(error)}>")
         return {"msg": "Ops! Something went wrong."}, 500
 
 
 @user_controller.get("/")
-@api.validate(resp=Response(HTTP_200=None, HTTP_404=None, HTTP_500=None), tags=["users"])
+@api.validate(resp=Response(
+    HTTP_200=UserResponseList, 
+    HTTP_404=DefaultResponse, 
+    HTTP_500=DefaultResponse), tags=["users"])
 def get_users():
     """
     Get all users
@@ -44,25 +49,22 @@ def get_users():
 
         if len(users) == 0:
             return {"msg": "no registered user"}, 404
+        
+        response = UserResponseList(
+            __root__ = [UserResponse.from_orm(user).dict() for user in users]
+        ).json()
 
-        return jsonify(
-            [
-                {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "birthdate": user.birthdate.isoformat() if user.birthdate else None,
-                    "created_at": user.created_at.isoformat()
-                }
-                for user in users
-            ]
-        ), 200
+        return jsonify(json.loads(response)), 200
     except Exception as error:
         print(f"<get_users: {type(error)}>")
         return {"msg": "Ops! Something went wrong."}, 500
 
 @user_controller.post("/")
-@api.validate(json=UserCreate, resp=Response(HTTP_201=None, HTTP_400=None, HTTP_409=None, HTTP_500=None), tags=["users"])
+@api.validate(json=UserCreate, resp=Response(
+    HTTP_201=DefaultResponse, 
+    HTTP_400=DefaultResponse, 
+    HTTP_409=DefaultResponse, 
+    HTTP_500=DefaultResponse), tags=["users"])
 def create_user():
     """
     Create an user
@@ -99,7 +101,11 @@ def create_user():
 
 
 @user_controller.put("/<int:user_id>")
-@api.validate(json=UserCreate, resp=Response(HTTP_200=None, HTTP_400=None, HTTP_404=None, HTTP_500=None), tags=["users"])
+@api.validate(json=UserCreate, resp=Response(
+    HTTP_200=DefaultResponse, 
+    HTTP_400=DefaultResponse, 
+    HTTP_404=DefaultResponse, 
+    HTTP_500=DefaultResponse), tags=["users"])
 def put_user(user_id):
     """
     Update an user
@@ -133,7 +139,10 @@ def put_user(user_id):
 
 
 @user_controller.delete("/<int:user_id>")
-@api.validate(resp=Response(HTTP_200=None, HTTP_404=None, HTTP_500=None), tags=["users"])
+@api.validate(resp=Response(
+    HTTP_200=DefaultResponse, 
+    HTTP_404=DefaultResponse, 
+    HTTP_500=DefaultResponse), tags=["users"])
 def delete_user(user_id):
     """
     Delete an user
