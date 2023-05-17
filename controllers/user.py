@@ -5,6 +5,7 @@ from factory import api, db
 from flask import Blueprint, jsonify
 from flask.globals import request
 from spectree import Response
+from flask_jwt_extended import jwt_required, current_user
 
 from models import User, UserCreate, UserEdit
 from models.user import UserResponseList, UserResponse
@@ -17,6 +18,7 @@ user_controller = Blueprint("user_controller", __name__, url_prefix="/users")
     HTTP_200=UserResponse, 
     HTTP_404=DefaultResponse, 
     HTTP_500=DefaultResponse), tags=["users"])
+@jwt_required()
 def get_user(user_id):
     """
     Get a specified user
@@ -40,6 +42,7 @@ def get_user(user_id):
     HTTP_200=UserResponseList, 
     HTTP_404=DefaultResponse, 
     HTTP_500=DefaultResponse), tags=["users"])
+@jwt_required()
 def get_users():
     """
     Get all users
@@ -64,7 +67,7 @@ def get_users():
     HTTP_201=DefaultResponse, 
     HTTP_400=DefaultResponse, 
     HTTP_409=DefaultResponse, 
-    HTTP_500=DefaultResponse), tags=["users"])
+    HTTP_500=DefaultResponse), security={}, tags=["users"])
 def create_user():
     """
     Create an user
@@ -101,32 +104,33 @@ def create_user():
 
 
 
-@user_controller.put("/<int:user_id>")
+@user_controller.put("/")
 @api.validate(json=UserEdit, resp=Response(
     HTTP_200=DefaultResponse, 
     HTTP_400=DefaultResponse, 
-    HTTP_404=DefaultResponse, 
     HTTP_500=DefaultResponse), tags=["users"])
-def put_user(user_id):
+@jwt_required()
+def put_user():
     """
     Update an user
     """
     try:
-        user = db.session.get(User, user_id)
-
-        if user is None:
-            return {"msg": f"There is no user with id {user_id}"}, 404
+        user = current_user
 
         data = request.json
+
+        valid_user = user.query.filter_by(username=data["username"]).first()
+
+        if valid_user and valid_user.username != user.username:
+            return {"msg": "username not available"}, 409
 
         if "birthdate" in data:
             if data["birthdate"].endswith("Z"):
                 data["birthdate"] = data["birthdate"][:-1]
+            user.birthdate = datetime.fromisoformat(data["birthdate"])
 
         user.username = data["username"]
         user.email = data["email"]
-        if "birthdate" in data:
-            user.birthdate = datetime.fromisoformat(data["birthdate"])
 
         db.session.commit()
 
@@ -139,20 +143,18 @@ def put_user(user_id):
         return {"msg": "Ops! Something went wrong."}, 500
 
 
-@user_controller.delete("/<int:user_id>")
+@user_controller.delete("/")
 @api.validate(resp=Response(
     HTTP_200=DefaultResponse, 
     HTTP_404=DefaultResponse, 
     HTTP_500=DefaultResponse), tags=["users"])
-def delete_user(user_id):
+@jwt_required()
+def delete_user():
     """
     Delete an user
     """
     try:
-        user = db.session.get(User, user_id)
-
-        if user is None:
-            return {"msg": f"There is no user with id {user_id}"}, 404
+        user = current_user
         
         db.session.delete(user)
         db.session.commit()
