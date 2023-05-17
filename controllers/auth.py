@@ -7,7 +7,7 @@ from spectree import Response
 from flask import Blueprint, request
 
 # Função para criar JWT token
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required
 
 # Modelo para buscarmos o usuário no banco de dados
 from models import User
@@ -28,7 +28,9 @@ class LoginResponseMessage(BaseModel):
 
 
 @auth_controller.post("/login")
-@api.validate(json=LoginMessage, resp=Response(HTTP_200=LoginResponseMessage, HTTP_401=DefaultResponse), tags=["auth"])
+@api.validate(json=LoginMessage, resp=Response(
+    HTTP_200=LoginResponseMessage, 
+    HTTP_401=DefaultResponse), security={}, tags=["auth"])
 def login():
     """
     Login in the system
@@ -39,7 +41,7 @@ def login():
 
     if user and user.verify_password(data["password"]):
         return {
-            "access_token": create_access_token(
+            "access_token": "Bearer " + create_access_token(
                 identity=user.username, expires_delta=None
             )
         }
@@ -48,6 +50,7 @@ def login():
 
 @auth_controller.post("/logout")
 @api.validate(resp=Response(HTTP_200=DefaultResponse), tags=["auth"])
+@jwt_required()
 def logout():
     """
     Logout user
