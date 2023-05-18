@@ -17,6 +17,8 @@ class User(db.Model):
     birthdate = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    posts = db.relationship("Post", backref="author", lazy="dynamic")
+
     def __repr__(self) -> str:
         return f"<User {self.username}>"
     
@@ -42,11 +44,15 @@ class UserEdit(BaseModel):
 class UserCreate(UserEdit):
     password: str
 
-class UserResponse(OrmBase):
+class UserResponse(BaseModel):
+    id: int
     username: str
     email: str
     birthdate: datetime = None
     created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 class UserResponseList(BaseModel):
     __root__: List[UserResponse]

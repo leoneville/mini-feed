@@ -40,7 +40,6 @@ def get_user(user_id):
 @user_controller.get("/")
 @api.validate(resp=Response(
     HTTP_200=UserResponseList, 
-    HTTP_404=DefaultResponse, 
     HTTP_500=DefaultResponse), tags=["users"])
 @jwt_required()
 def get_users():
@@ -50,9 +49,6 @@ def get_users():
     try:
         users = User.query.all()
 
-        if len(users) == 0:
-            return {"msg": "no registered user"}, 404
-        
         response = UserResponseList(
             __root__ = [UserResponse.from_orm(user).dict() for user in users]
         ).json()

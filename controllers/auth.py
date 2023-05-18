@@ -2,6 +2,7 @@
 from factory import api
 from pydantic import BaseModel
 from spectree import Response
+from datetime import timedelta
 
 # Blueprint e acesso aos dados da requisição
 from flask import Blueprint, request
@@ -42,9 +43,9 @@ def login():
     if user and user.verify_password(data["password"]):
         return {
             "access_token": "Bearer " + create_access_token(
-                identity=user.username, expires_delta=None
+                identity=user.username, expires_delta=timedelta(hours=3)
             )
-        }
+        }, 200
     
     return {"msg": "Username or password do not match"}, 401
 
