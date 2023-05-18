@@ -33,7 +33,7 @@ def create_app():
 
     db.init_app(app)
 
-    from models import User
+    from models import User, Post
     migrate.init_app(app, db)
 
     @jwt.user_lookup_loader
