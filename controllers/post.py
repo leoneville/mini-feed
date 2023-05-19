@@ -143,7 +143,7 @@ POSTS_PER_PAGE = 5
 @post_controller.get("/")
 @api.validate(query=SearchModel, resp=Response(HTTP_200=PostResponseList, HTTP_500=DefaultResponse), tags=["posts"])
 @jwt_required()
-def get_posts_from_user():
+def get_all():
     """
     Get all posts
     """
@@ -158,7 +158,7 @@ def get_posts_from_user():
             posts_query = posts_query.order_by(Post.created_at.desc())
 
 
-        posts_paginate = Post.query.paginate(page=page, per_page=POSTS_PER_PAGE)
+        posts_paginate = posts_query.paginate(page=page, per_page=POSTS_PER_PAGE)
         total, posts = posts_paginate.total, posts_paginate.item
 
         response = PostResponseList(
