@@ -60,7 +60,7 @@ def get_postagem_por_usuario():
 
 
 def filter_by_ilike():
-    posts = Post.query.filter(Post.text.ilike(f"apre"))
+    posts = Post.query.filter(Post.text.ilike(f"%apre%"))
     print(posts.all())
 
 
