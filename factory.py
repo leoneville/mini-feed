@@ -42,9 +42,10 @@ def create_app():
 
         return current_user
 
-    from controllers import user_controller, auth_controller
+    from controllers import user_controller, auth_controller, post_controller
     app.register_blueprint(user_controller)
     app.register_blueprint(auth_controller)
+    app.register_blueprint(post_controller)
 
     api.register(app)
     
