@@ -5,7 +5,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from pydantic import BaseModel
 
 from factory import db
-from utils.models import OrmBase
 
 class User(db.Model):
     __tablename__ = 'user'

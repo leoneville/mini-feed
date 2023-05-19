@@ -59,10 +59,32 @@ def get_postagem_por_usuario():
     print(user.posts.order_by(Post.id.desc()).all())
 
 
+def filter_by_ilike():
+    posts = Post.query.filter(Post.text.ilike(f"apre"))
+    print(posts.all())
+
+
+def get_paginate():
+    posts_pagination = Post.query.paginate(page=1, per_page=5)
+    print(posts_pagination)
+    print(posts_pagination.items) # retorna a lista de objetos Post da página consultada
+    print(posts_pagination.total) # retorna o total de postagens de todas as páginas
+
+
+def post_order_by_desc():
+    posts = Post.query.order_by(Post.created_at.desc())
+    print(posts)
+    print(posts.all())
+    print(posts.first())
+
+
 with app.app_context():
     # cria_postagem()
     # cria_postagem_backref_author()
     # carregando_postagens()
-    get_postagem_por_usuario()
+    # get_postagem_por_usuario()
+    # filter_by_ilike()
+    # get_paginate()
+    post_order_by_desc()
 
 
