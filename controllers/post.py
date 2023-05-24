@@ -149,7 +149,7 @@ def get_all():
     """
     try:
         search = request.args.get("search", "")
-        page = request.args.get("page", 1)
+        page = int(request.args.get("page", 1))
         reversed = True if request.args.get("reversed", "false") == "true" else False
 
         posts_query = Post.query.filter(Post.text.ilike(f"%{search}%"))
@@ -159,7 +159,7 @@ def get_all():
 
 
         posts_paginate = posts_query.paginate(page=page, per_page=POSTS_PER_PAGE)
-        total, posts = posts_paginate.total, posts_paginate.item
+        total, posts = posts_paginate.total, posts_paginate.items
 
         response = PostResponseList(
             page=page,
