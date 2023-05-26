@@ -10,10 +10,10 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 api = SpecTree(
-    "flask", 
-    title="Mini Feed API", 
-    version="v.1.0", 
-    path="docs", 
+    "flask",
+    title="Mini Feed API",
+    version="v.1.0",
+    path="docs",
     security_schemes=[
         SecurityScheme(
             name="api_key",
@@ -21,7 +21,8 @@ api = SpecTree(
         )
     ],
     security={"api_key": []}
-    )
+)
+
 
 def create_app():
 
@@ -33,7 +34,7 @@ def create_app():
 
     db.init_app(app)
 
-    from models import User, Post
+    from models import User, Post, Role
     migrate.init_app(app, db)
 
     @jwt.user_lookup_loader
@@ -48,5 +49,5 @@ def create_app():
     app.register_blueprint(post_controller)
 
     api.register(app)
-    
+
     return app

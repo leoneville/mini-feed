@@ -1,0 +1,6 @@
+username,password,email,birthdate,role
+leoneville.dev,1234@1234,neville.guimaraes@hotmail.com,1998-01-21,admin
+thiago,verysafepassword,thiago@neps.academy,1998-11-20,admin
+davi,verysafepassword,davi@neps.academy,1998-08-28,user
+joao,verysafepassword,joao@neps.academy,2000-11-12,user
+rafael,verysafepassword,rafael@neps.academy,1990-02-04,user
