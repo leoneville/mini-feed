@@ -12,13 +12,12 @@ from models import Post, PostCreate, PostResponse, PostResponseList
 from utils.responses import DefaultResponse
 
 
-
 post_controller = Blueprint("posts_controller", __name__, url_prefix="/posts")
 
 
 @post_controller.post("/")
 @api.validate(json=PostCreate, resp=Response(
-    HTTP_201=DefaultResponse, 
+    HTTP_201=DefaultResponse,
     HTTP_500=DefaultResponse), tags=["posts"])
 @jwt_required()
 def create_post():
@@ -41,12 +40,12 @@ def create_post():
         db.session.rollback()
         print(f"<{type(error)} - {error}>")
         return {"msg": "Ops! Something went wrong."}, 500
-    
+
 
 @post_controller.put("/<int:post_id>")
 @api.validate(json=PostCreate, resp=Response(
-    HTTP_200=DefaultResponse, 
-    HTTP_403=DefaultResponse, 
+    HTTP_200=DefaultResponse,
+    HTTP_403=DefaultResponse,
     HTTP_500=DefaultResponse), tags=["posts"])
 @jwt_required()
 def update(post_id):
@@ -56,13 +55,12 @@ def update(post_id):
     try:
         post = db.session.get(Post, post_id)
 
-        
         if post is None:
             return {"msg": "This post does not exists."}, 404
-        
-        if post.author_id != current_user.id:
-            return {"msg": "You can only change your own posts."}, 403
-        
+
+        if not (post.author_id == current_user.id or current_user.role.can_manage_posts):
+            return {"msg": "You can't update this post."}, 403
+
         data = request.json
 
         post.text = data["text"]
@@ -75,12 +73,12 @@ def update(post_id):
         db.session.rollback()
         print(f"<{type(error)} - {error}>")
         return {"msg": "Ops! Something went wrong."}, 500
-    
+
 
 @post_controller.delete("/<int:post_id>")
 @api.validate(resp=Response(
-    HTTP_200=DefaultResponse, 
-    HTTP_403=DefaultResponse, 
+    HTTP_200=DefaultResponse,
+    HTTP_403=DefaultResponse,
     HTTP_500=DefaultResponse), tags=["posts"])
 @jwt_required()
 def delete(post_id):
@@ -92,26 +90,25 @@ def delete(post_id):
 
         if post is None:
             return {"msg": "This post does not exists."}, 404
-        
-        if post.author_id != current_user.id:
-            return {"msg": "You can only delete your own posts."}, 403
-        
+
+        if not (post.author_id == current_user.id or current_user.role.can_manage_posts):
+            return {"msg": "You can't delete this post."}, 403
+
         db.session.delete(post)
         db.session.commit()
 
         return {"msg": "The post was deleted."}, 200
 
     except Exception as error:
-            db.session.rollback()
-            print(f"<{type(error)} - {error}>")
-            return {"msg": "Ops! Something went wrong."}, 500
-    
+        db.session.rollback()
+        print(f"<{type(error)} - {error}>")
+        return {"msg": "Ops! Something went wrong."}, 500
 
 
 @post_controller.get("/<int:post_id>")
 @api.validate(resp=Response(
-    HTTP_200=PostResponse, 
-    HTTP_404=DefaultResponse, 
+    HTTP_200=PostResponse,
+    HTTP_404=DefaultResponse,
     HTTP_500=DefaultResponse), tags=["posts"])
 @jwt_required()
 def get_one(post_id):
@@ -123,7 +120,7 @@ def get_one(post_id):
 
         if post is None:
             return {"msg": "This post does not exists."}, 404
-        
+
         response = PostResponse.from_orm(post).json()
 
         return json.loads(response), 200
@@ -131,14 +128,16 @@ def get_one(post_id):
     except Exception as error:
         print(f"<{type(error)} - {error}>")
         return {"msg": "Ops! Something went wrong."}, 500
-    
+
 
 class SearchModel(BaseModel):
     search: str = ""
     page: int = 1
     reversed: bool = False
 
-POSTS_PER_PAGE = 5    
+
+POSTS_PER_PAGE = 5
+
 
 @post_controller.get("/")
 @api.validate(query=SearchModel, resp=Response(HTTP_200=PostResponseList, HTTP_500=DefaultResponse), tags=["posts"])
@@ -150,15 +149,16 @@ def get_all():
     try:
         search = request.args.get("search", "")
         page = int(request.args.get("page", 1))
-        reversed = True if request.args.get("reversed", "false") == "true" else False
+        reversed = True if request.args.get(
+            "reversed", "false") == "true" else False
 
         posts_query = Post.query.filter(Post.text.ilike(f"%{search}%"))
 
         if reversed:
             posts_query = posts_query.order_by(Post.created_at.desc())
 
-
-        posts_paginate = posts_query.paginate(page=page, per_page=POSTS_PER_PAGE)
+        posts_paginate = posts_query.paginate(
+            page=page, per_page=POSTS_PER_PAGE)
         total, posts = posts_paginate.total, posts_paginate.items
 
         response = PostResponseList(

@@ -24,12 +24,21 @@ def get_current_user():
     return json.loads(response), 200
 
 
+def can_access_sensitive_information(func):
+    def wrapper(*args, **kwargs):
+        if (current_user and current_user.can_access_sensitive_information):
+            return func(*args, **kwargs)
+        return {"msg": "You don't have permission to access this user information."}, 403
+    return wrapper
+
+
 @user_controller.get("/<int:user_id>")
 @api.validate(resp=Response(
     HTTP_200=UserResponse,
     HTTP_404=DefaultResponse,
     HTTP_500=DefaultResponse), tags=["users"])
 @jwt_required()
+@can_access_sensitive_information
 def get_user(user_id):
     """
     Get a specified user
@@ -58,6 +67,9 @@ def get_users():
     Get all users
     """
     try:
+        if not (current_user and current_user.role.can_manage_users):
+            return {"msg": "You don't have permission to view all users"}, 403
+
         users = User.query.all()
 
         response = UserResponseList(
@@ -151,18 +163,23 @@ def put_user():
         return {"msg": "Ops! Something went wrong."}, 500
 
 
-@user_controller.delete("/")
+@user_controller.delete("/<int:user_id>")
 @api.validate(resp=Response(
     HTTP_200=DefaultResponse,
     HTTP_404=DefaultResponse,
     HTTP_500=DefaultResponse), tags=["users"])
 @jwt_required()
-def delete_user():
+def delete_user(user_id):
     """
     Delete an user
     """
     try:
-        user = current_user
+        if not (current_user and current_user.role.can_manage_users):
+            return {"msg": "You don't have permission to delete this user"}, 403
+
+        user = db.session.get(User, user_id)
+        if user is None:
+            return {"msg": "User not found."}, 404
 
         db.session.delete(user)
         db.session.commit()
