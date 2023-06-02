@@ -70,3 +70,11 @@ class UserResponse(BaseModel):
 
 class UserResponseList(BaseModel):
     __root__: List[UserResponse]
+
+
+class UserResponseSimple(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        orm_mode = True
