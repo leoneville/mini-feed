@@ -26,6 +26,9 @@ def get_current_user():
 
 def can_access_sensitive_information(func):
     def wrapper(*args, **kwargs):
+        """
+        Get a specified user
+        """
         if (current_user and current_user.can_access_sensitive_information):
             return func(*args, **kwargs)
         return {"msg": "You don't have permission to access this user information."}, 403
@@ -40,9 +43,6 @@ def can_access_sensitive_information(func):
 @jwt_required()
 @can_access_sensitive_information
 def get_user(user_id):
-    """
-    Get a specified user
-    """
     try:
         user = db.session.get(User, user_id)
 
